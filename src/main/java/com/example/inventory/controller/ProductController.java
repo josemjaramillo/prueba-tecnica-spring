@@ -6,7 +6,9 @@ import com.example.inventory.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.List;
 @Tag(name= "Productos", description = "Operaciones CRUD sobre productos")
 @RestController
 @RequestMapping("/api/products")
+@Validated
 public class ProductController {
     private final ProductService productService;
 
@@ -37,7 +40,8 @@ public class ProductController {
     @Operation(summary = "Crear nuevo producto")
     @PostMapping
     public ResponseEntity<ProductResponseDTO> create (@Valid @RequestBody ProductRequestDTO product){
-        return ResponseEntity.ok(productService.createProduct(product));
+        ProductResponseDTO created = productService.createProduct(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Operation(summary = "Actualizar un producto existente")

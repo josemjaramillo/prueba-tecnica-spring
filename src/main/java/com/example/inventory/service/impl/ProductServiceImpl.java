@@ -18,6 +18,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper mapper;
 
+
     public ProductServiceImpl(ProductRepository repo, ProductMapper mapper){
         this.productRepository = repo;
         this.mapper = mapper;
@@ -36,6 +37,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponseDTO createProduct(ProductRequestDTO dto) {
+        if (dto.price().signum() <= 0) {
+            throw new IllegalArgumentException("El precio debe ser mayor a 0");
+        }
         Product entity = mapper.toEntity(dto);
         return mapper.toDto(productRepository.save(entity));
     }
@@ -45,6 +49,9 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponseDTO updateProduct(Long id, ProductRequestDTO dto) {
         Product entity = productRepository.findById(id).orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
+        if (dto.price().signum() <= 0) {
+            throw new IllegalArgumentException("El precio debe ser mayor a 0");
+        }
         mapper.updateEntityFromDto(dto, entity);
         return mapper.toDto(productRepository.save(entity));
     }

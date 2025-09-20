@@ -44,7 +44,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     public MovementResponseDTO registerStock(Long productId, MovementRequestDTO dto){
         if (dto.quantity() <= 0) {
-            throw new IllegalArgumentException("Cantidad inválida");
+            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
         }
 
         Product product = productRepository.findById(productId)
