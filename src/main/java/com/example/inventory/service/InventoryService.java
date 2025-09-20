@@ -1,12 +1,14 @@
 package com.example.inventory.service;
 
-import com.example.inventory.entity.InventoryMovement;
+import com.example.inventory.dto.MovementRequestDTO;
+import com.example.inventory.dto.MovementResponseDTO;
+import com.example.inventory.dto.StockResponseDTO;
+
 import java.util.List;
 
 public interface InventoryService {
 
-    int getAvailableStock(Long productId);
-    InventoryMovement registerStockIn(Long productId, int quantity);
-    InventoryMovement registerStockOut(Long productId, int quantity);
-    List<InventoryMovement> getStockHistory(Long productId);
+    StockResponseDTO getProductStock(Long productId);
+    MovementResponseDTO registerStock(Long productId, MovementRequestDTO dto);
+    List<MovementResponseDTO> getStockHistory(Long productId);
 }

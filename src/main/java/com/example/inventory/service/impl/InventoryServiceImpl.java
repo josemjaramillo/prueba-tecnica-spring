@@ -1,8 +1,12 @@
 package com.example.inventory.service.impl;
 
+import com.example.inventory.dto.MovementRequestDTO;
+import com.example.inventory.dto.MovementResponseDTO;
+import com.example.inventory.dto.StockResponseDTO;
 import com.example.inventory.entity.InventoryMovement;
 import com.example.inventory.entity.Product;
 import com.example.inventory.exception.NotFoundException;
+import com.example.inventory.mapper.MovementMapper;
 import com.example.inventory.repository.InventoryMovementRepository;
 import com.example.inventory.repository.ProductRepository;
 import com.example.inventory.service.InventoryService;
@@ -15,63 +19,57 @@ import java.util.List;
 public class InventoryServiceImpl implements InventoryService {
     private final InventoryMovementRepository movementRepository;
     private final ProductRepository productRepository;
+    private final MovementMapper mapper;
 
     public InventoryServiceImpl(
             InventoryMovementRepository movementRepository,
-            ProductRepository productRepository)
+            ProductRepository productRepository,
+            MovementMapper mapper)
     {
         this.movementRepository = movementRepository;
         this.productRepository = productRepository;
+        this.mapper = mapper;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public int getAvailableStock(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new NotFoundException("Producto no encontrado");
-        }
-        return movementRepository.computeStock(productId);
+    public StockResponseDTO getProductStock(Long productId) {
+        Product entity = productRepository.findById(productId).orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+
+        int stock = movementRepository.computeStock(productId);
+        return new StockResponseDTO(entity.getId(), entity.getName(), entity.getDescription(), entity.getPrice(), stock);
     }
 
     @Override
     @Transactional
-    public InventoryMovement registerStockIn(Long productId, int quantity){
-        if (quantity <= 0) {
+    public MovementResponseDTO registerStock(Long productId, MovementRequestDTO dto){
+        if (dto.quantity() <= 0) {
             throw new IllegalArgumentException("Cantidad inválida");
         }
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
-        InventoryMovement movement = new InventoryMovement(product, InventoryMovement.MovementType.IN, quantity);
-        return movementRepository.save(movement);
+        if (dto.movementType() == InventoryMovement.MovementType.OUT) {
+            if (dto.quantity() > movementRepository.computeStock(productId)) {
+                throw new IllegalArgumentException("Stock insuficiente");
+            }
+        }
+        InventoryMovement entity = new InventoryMovement(product, dto.movementType(), dto.quantity());
+        movementRepository.save(entity);
+        return mapper.toDto(entity);
     }
 
-    @Override
-    @Transactional
-    public InventoryMovement registerStockOut(Long productId, int quantity){
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("Cantidad inválida");
-        }
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
-
-        if (quantity > movementRepository.computeStock(productId)){
-            throw new IllegalArgumentException("Stock insuficiente");
-        }
-        InventoryMovement movement = new InventoryMovement(product, InventoryMovement.MovementType.OUT, quantity);
-        return movementRepository.save(movement);
-    }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventoryMovement> getStockHistory(Long productId){
+    public List<MovementResponseDTO> getStockHistory(Long productId){
 
         if (!productRepository.existsById(productId)) {
             throw new NotFoundException("Producto no encontrado");
         }
-        return movementRepository.findByProduct_IdOrderByMovementDateDesc(productId);
+        return mapper.toDto(movementRepository.findByProduct_IdOrderByMovementDateDesc(productId));
     }
 
 }

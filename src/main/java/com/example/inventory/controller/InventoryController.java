@@ -1,11 +1,16 @@
 package com.example.inventory.controller;
 
 
-import com.example.inventory.entity.InventoryMovement;
-import com.example.inventory.entity.Product;
+import com.example.inventory.dto.MovementRequestDTO;
+import com.example.inventory.dto.MovementResponseDTO;
+import com.example.inventory.dto.StockResponseDTO;
 import com.example.inventory.service.InventoryService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/products/{productId}")
@@ -16,20 +21,20 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
-//- `GET /api/products/{id}/stock` → consultar stock disponible
-//- `POST /api/products/{id}/stock/in` → registrar entrada
-//- `POST /api/products/{id}/stock/out` → registrar salida
-//- `GET /api/products/{id}/movements` → ver historial (opcional)
-
     @GetMapping("/stock")
-    public ResponseEntity<Integer> getStock (@PathVariable("productId") Long id){
-        return ResponseEntity.ok(inventoryService.getAvailableStock(id));
+    public ResponseEntity<StockResponseDTO> getStock (@PathVariable("productId") Long id){
+        return ResponseEntity.ok(inventoryService.getProductStock(id));
     }
 
-//    @PostMapping("/movements")
-//    public ResponseEntity<InventoryMovement> registerStockIn (
-//            @PathVariable("productId") Long id,
-//            @RequestBody MovementRequest body){
-//        inventoryService.registerStockIn()
-//    }
+    @PostMapping("/movements")
+    public ResponseEntity<MovementResponseDTO> registerStockIn (
+            @PathVariable("productId") Long id,
+            @Valid @RequestBody MovementRequestDTO body){
+        return ResponseEntity.ok(inventoryService.registerStock(id,body));
+    }
+
+    @GetMapping("/movements")
+    public List<MovementResponseDTO> getAllMovements(@PathVariable("productId") Long id){
+        return inventoryService.getStockHistory(id);
+    }
 }
