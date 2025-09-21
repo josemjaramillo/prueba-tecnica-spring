@@ -39,4 +39,3 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-buildDir = file('C:/Users/jossa/java.build.crud')
