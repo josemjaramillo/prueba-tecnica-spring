@@ -22,7 +22,7 @@ public class Product {
 
     // Constructor vacio
     public Product() {}
-    public Product(String name, String description, BigDecimal price, Integer stock) {
+    public Product(String name, String description, BigDecimal price) {
         this.name = name;
         this.description = description;
         this.price = price;

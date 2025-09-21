@@ -10,6 +10,8 @@ import com.example.inventory.mapper.MovementMapper;
 import com.example.inventory.repository.InventoryMovementRepository;
 import com.example.inventory.repository.ProductRepository;
 import com.example.inventory.service.InventoryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final InventoryMovementRepository movementRepository;
     private final ProductRepository productRepository;
     private final MovementMapper mapper;
+    private static final Logger log = LoggerFactory.getLogger(InventoryServiceImpl.class);
 
     public InventoryServiceImpl(
             InventoryMovementRepository movementRepository,
@@ -34,7 +37,11 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional(readOnly = true)
     public StockResponseDTO getProductStock(Long productId) {
-        Product entity = productRepository.findById(productId).orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+        Product entity = productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Get: producto con ID {} no encontrado", productId);
+                    return new NotFoundException("Producto no encontrado");
+                });
 
         int stock = movementRepository.computeStock(productId);
         return new StockResponseDTO(entity.getId(), entity.getName(), entity.getDescription(), entity.getPrice(), stock);
@@ -44,14 +51,19 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     public MovementResponseDTO registerStock(Long productId, MovementRequestDTO dto){
         if (dto.quantity() <= 0) {
+            log.warn("Cantidad incorrecta: {}", dto.quantity());
             throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
         }
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+                .orElseThrow(() -> {
+                    log.warn("Register: producto con ID {} no encontrado", productId);
+                    return new NotFoundException("Producto no encontrado");
+                });
 
         if (dto.movementType() == InventoryMovement.MovementType.OUT) {
             if (dto.quantity() > movementRepository.computeStock(productId)) {
+                log.warn("Stock insuficiente para realizar operacion");
                 throw new IllegalArgumentException("Stock insuficiente");
             }
         }
@@ -67,6 +79,7 @@ public class InventoryServiceImpl implements InventoryService {
     public List<MovementResponseDTO> getStockHistory(Long productId){
 
         if (!productRepository.existsById(productId)) {
+            log.warn("History: producto con ID {} no encontrado", productId);
             throw new NotFoundException("Producto no encontrado");
         }
         return mapper.toDto(movementRepository.findByProduct_IdOrderByMovementDateDesc(productId));
