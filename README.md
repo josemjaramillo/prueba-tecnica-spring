@@ -13,7 +13,7 @@
 - Java 21
 - PostgreSQL corriendo en puerto local
 
-## ⚙️ Configuración
+## Configuración
 Configura tu `application.properties` con tus credenciales de base de datos:
 
 ```
@@ -56,4 +56,23 @@ http://localhost:8080/swagger-ui.html
 Para ejecutar pruebas
 ```
 ./gradlew test
+```
+
+## Tablas utilizadas en PostgreSQL
+```SQL
+CREATE TABLE products (
+	id BIGSERIAL PRIMARY KEY,
+	name VARCHAR(50) NOT NULL,
+	description VARCHAR(100),
+	price DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE inventory_movements (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    movement_type VARCHAR(10) NOT NULL CHECK (movement_type IN ('IN', 'OUT')),
+    quantity INT NOT NULL,
+    movement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES products(id)
+);
 ```
